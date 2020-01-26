@@ -1,37 +1,40 @@
-from flask import Flask, g, Response, make_response
+from flask import Flask, g, request, Response, make_response, session
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
 app.debug = True
 
-@app.route("/res1")
-def res1():
-    custom_res = Response("Custom Response", 200, {'test' : 'ttt'})
-    return make_response(custom_res)
+app.config.update(
+    SECRET_KEY='X1234',
+    SESSION_COOKIE_NAME='pyweb_flask_session',
+    PERMANENT_SESSION_LIFETIME=timedelta(31)
+)
 
-@app.route("/test_wsgi")
-def wsgi_test():
-    def application(environ, start_response):
-        body = "The request method was {}".format(environ["REQUEST_METHOD"])
-        headers = [ ('Content-Type', 'text/plain'),
-                    ('Content-Length', str(len(body)))]
-        start_response('200 OK', headers)
-        return [body]
+# Logout
+@app.route("/delsess")
+def delsess():
+    if session.get("Token"):
+        del session["Token"]
+    return "Session이 삭제되었습니다!"
 
-    return make_response(application)
+@app.route("/wc")
+def wc():
+    key = request.values.get('key', None)
+    val = request.values.get('val', None)
+    res = Response("SET COOKIE")
+    res.set_cookie(key, val)
+    session["Token"] = "123X"
+    return make_response(res)
 
+@app.route("/rc")
+def rc():
+    key = request.values.get('key', None)
+    val = request.cookies.get(key)
+    return "cookie[{}] = {}, {}".format(key, val, session.get("Token"))
 
-# @app.before_request
-# def before_request():
-#     print("before_request!!!")
-#     g.str = "한글!!"
-    
-
-# @app.route("/gg")
-# def hello_world():
-#     return "Hello Flask World" + getattr(g, "str", "111")
 
 @app.route("/")
-def hello_world2():
+def hello_world():
     return "Hello Flask World~!##"
 
 
